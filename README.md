@@ -75,7 +75,7 @@ Mais si vous devez le modifier, alors cela se fera dans le `keys.ts` dans `/src/
 
 1. Ouvrez un terminal avec votre IDE, soit un terminal NodeJS.
 2. Mettez vous à la racine du projet.
-3. Lancer la commande `npm run start`.
+3. Lancer la commande `npm install` et `npm run start`.
 
 Il faudra attendre un peu le temps que npm installe les node modules.
 
