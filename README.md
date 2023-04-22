@@ -1,46 +1,153 @@
-# Getting Started with Create React App
+# Forum MQTT
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## Présentation
 
-## Available Scripts
+C'est un projet d'école avec l'utilisation de ReactJS où l'objectif est de communiquer avec un broker MQTT.
 
-In the project directory, you can run:
+## Fonctionnement global
 
-### `npm start`
+Il y a 3 acteurs :
+- Le client ReactJS
+- Le broker Mosquitto : les topics et la communication
+- Le serveur NodeJS Glitch : l'authentification de départ
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+![relation](assets/relation.jpg)
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+![flow](assets/flow.jpg)
 
-### `npm test`
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## structure de données entre Mosquitto et ReactJs
 
-### `npm run build`
+pour envoyer des informations enrichies, j'ai établie cette structure de donnée
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+- `client-id` : l'identifiant de la personne qui envoie le message
+- `client-username` : le pseudo de la personne qui envoie le message
+- `message-type` : le type de message : `raw`, `info` ou `button`
+- `options` : un contenue sous format JSON qui complèmente pour des actions (ex: invitation)
+- `message` : le contenu du message
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+ils ont pour séparateur `:|:`
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+![message_structure](assets/message_structure.png)
 
-### `npm run eject`
+## Prérequis
+- Node.js (https://nodejs.org)
+- Broker Mosquitto (https://mosquitto.org/)
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+## Configuration du broker Mosquitto
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+Les étapes suivantes ont été réalisées sur Windows 10 et les explications seront données en conséquence.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+1. Dans le projet, récupérez le fichier `mosquitto.conf` : `/public/configurations/mosquitto.conf`.
+2. Aller à l'emplacement ou vous avez installer Mosquitto (pour ma part : `C:\Program Files\mosquitto`) puis remplacer le `mosquitto.conf` par celui que vous avez récupéré dans le projet
 
-## Learn More
+Le nouveau `mosquitto.conf` a été modifié pour accepter les requêtes websocket sur le port 8181.
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+![configuration](assets/mosquitto_conf.png)
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## Lancement du broker Mosquitto
+
+1. Ouvrez une fenêtre de terminal Windows (`Menu démarré -> Exécuter -> cmd`).
+2. Accédez au dossier Mosquitto (Pour ma part : `cd C:\Program Files\mosquitto`).
+3. Exécutez la commande suivante : `mosquitto.exe -v -c mosquitto.conf`.
+
+![command](assets/mosquitto_command.png)
+
+Le paramètre `-v` (verbose) permet de voir les logs et `-c` indique l'utilisation de notre fichier de configuration.
+
+À partir d'ici, vous devez avoir ce genre de résultat :
+
+![result](assets/mosquitto_result.png)
+
+**Et voilà ! Passons maintenant à notre client web ReactJs.**
+
+
+## Configuration de Forum MQTT
+
+Cette partie est **optionnel**, par défaut le client se connecte sur `ws://localhost:8181`.
+
+Mais si vous devez le modifier, alors cela se fera dans le `keys.ts` dans `/src/utils/`.
+
+![env](assets/react_env.png)
+
+## Lancement de Forum MQTT
+
+1. Ouvrez un terminal avec votre IDE, soit un terminal NodeJS.
+2. Mettez vous à la racine du projet.
+3. Lancer la commande `npm run start`.
+
+Il faudra attendre un peu le temps que npm installe les node modules.
+
+Vous devez à la fin avoir ça :
+- sur console
+
+![result_console](assets/react_console_result.png)
+
+- sur votre navigateur internet
+
+![result_window](assets/react_window_result.png)
+
+# Utilisations de Forum MQTT
+
+## Connexion et inscription
+
+Vous avez la possibilité d'inscrire un compte ou de vous connecter avec un compte existant.
+
+Chaque `username` est unique, vous ne pouvez pas un prendre un déjà utilisé (ou alors connectez-vous).
+
+**IMPORTANT** : Le temps d'inscription et/ou de connexion peut prendre un peu de temps et c'est normal !
+
+Pour la gestion des comptes, j'utilise `Glitch.com` pour faire un serveur gratuit pour l'authentification, et le serveur endormi prend un peu de temps pour se rallumer.
+
+![connection](assets/react_connection.gif)
+
+Vous arrivez ensuite sur le canal général où vous pourrez écrire avec d'autres personnes !
+
+## Structure du forum
+
+1. Menu des topics : contient tout les topics souscrits.
+2. L'élément est en rouge, car il est le topic sélectionné.
+3. Bouton permettant de créer un topic.
+4. Permet d'envoyer un message.
+5. Le chat du topic sélectionné.
+6. Menu des utilisateurs : il contient toutes les conversations personnelles.
+7. Notification avec le nombre de message non lu.
+
+![structure](assets/react_structure.png)
+
+## Discussion personnelle entre 2 utilisateurs
+
+Quand un utilisateur se connecte, il se met directement dans la liste des utilisateurs de droite !
+
+Il suffit alors de cliquer sur son nom et de démarrer une discussion :).
+
+Vous recevrez une notification si vous n'êtes pas sur le canal de discussion.
+
+Vous avez aussi un espace personnel pour vous écrire  de jolis mots d'amour à vous-même <3 (je ne suis pas la pour juger)
+
+![one_to_one](assets/react_one_to_one.gif)
+
+## Gestion des topics personnels
+
+Vous pouvez créer / rejoindre / quitter / inviter dans un topic ! **seul le topic général n'est pas modifiable**
+
+### Créer un topic
+
+1. Il suffit de cliquer en bas à gauche dans le menu des canaux `Créer un topic`
+2. Entrez le nom de votre topic dans la pop-up et validez !
+
+Vous pourrez voir et accéder à votre topic qui se situe sur la gauche.
+
+### Invitez dans un topic
+1. Cliquez sur l'icône en forme d'enveloppe à coté du nom du topic à sélectionner.
+2. Cochez dans la pop-up les gens à inviter.
+3. Et c'est tout ! De leurs côté  ils devront cliquer sur l'invitation, et à vous les discussions de groupe privé !
+
+**NOTE : Seul le propriétaire du topic peut gérer les invitations (un choix du développeur)**
+
+![invit](assets/react_invit_topic.gif)
+
+### Quittez dans un topic
+
+1. Cliquez tout simplement sur la petite croix rouge à côté du nom du topic, fini !
